@@ -43,7 +43,7 @@ echo "$JSON_DATA" > ../client/public/versionInfo.json
 
 # Update the docker-compose.yml tag
 echo "** Updating docker-compose.yml tag... to $CURRENT_BRANCH"
-sed -i "s/image: iisdevs\/glyphwitch:main/image: iisdevs\/glyphwitch:$CURRENT_BRANCH/g" ./docker-compose.yml
+sed -i "s/image: iisdevs\/unga-data-dashboard:main/image: iisdevs\/lac_unga_dashboard_react:$CURRENT_BRANCH/g" ./docker-compose.yml
 echo "  - Updated docker-compose.yml tag to $CURRENT_BRANCH"
 
 
@@ -64,7 +64,7 @@ echo "  - Tagged the commit with the release name: $RELEASE_NAME"
 
 # Create a release on GitHub
 echo "** Creating a release on GitHub, Release Name: $RELEASE_NAME" 
-curl -sSL -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" -X POST https://api.github.com/repos/memphis-iis/glyphwitch/releases -d "{\"tag_name\": \"$RELEASE_NAME\", \"name\": \"$RELEASE_NAME\", \"body\": \"$RELEASE_BODY\"}"
+curl -sSL -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" -X POST https://api.github.com/repos/memphis-iis/lac_unga_dashboard_react/releases -d "{\"tag_name\": \"$RELEASE_NAME\", \"name\": \"$RELEASE_NAME\", \"body\": \"$RELEASE_BODY\"}"
 echo "  - Release created on GitHub"
 
 # Clean up the local docker cache
@@ -80,8 +80,8 @@ fi
 # Build and push the image
 echo "** Building Docker image..."
 sudo docker login
-sudo docker-compose build unga-data-dashboard
-sudo docker-compose push unga-data-dashboard
+sudo docker-compose build lac_unga_dashboard_react
+sudo docker-compose push lac_unga_dashboard_react
 
 echo "** Build and push completed for tag: $TAG"
 

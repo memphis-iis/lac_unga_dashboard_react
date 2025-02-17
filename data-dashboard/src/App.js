@@ -18,13 +18,13 @@ const App = () => {
   const [barAggregation, setBarAggregation] = useState("average");
 
   const chartRef = useRef(null);
-  const geoUrl = "/custom.geo.json";
+  const geoUrl = "./custom.geo.json";
   const [mapData, setMapData] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
       const results = await new Promise((resolve, reject) => {
-        Papa.parse('/unga_cmx.csv', {
+        Papa.parse('./unga_cmx.csv', {
           download: true,
           header: true,
           dynamicTyping: true,

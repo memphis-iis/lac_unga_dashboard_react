@@ -1,7 +1,9 @@
 version: "3.9"
 
 services:
-  unga-data-dashboard:
+  lac_unga_dashboard_react:
     build: ./data-dashboard
-    image: iisdevs/unga-data-dashboard:latest
+    image: iisdevs/lac_unga_dashboard_react:latest
+    ports:
+      - "3000:80"
 

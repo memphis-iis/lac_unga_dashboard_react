@@ -5,8 +5,6 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-FROM node:alpine as production-stage
-WORKDIR /app
-COPY --from=build-stage /app/build /app/build
-EXPOSE 3000
-CMD ["npx", "serve", "-s", "build"]
+FROM httpd:2.4
+COPY --from=build-stage /app/build  /usr/local/apache2/htdocs/lac_unga_dashboard/
+EXPOSE 80

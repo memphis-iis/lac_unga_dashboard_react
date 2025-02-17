@@ -1,0 +1,7 @@
+version: "3.9"
+
+services:
+  unga-data-dashboard:
+    build: ./data-dashboard
+    image: iisdevs/unga-data-dashboard:latest
+

@@ -24,7 +24,7 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       const results = await new Promise((resolve, reject) => {
-        Papa.parse('./unga_cmx.csv', {
+        Papa.parse('./output.csv', {
           download: true,
           header: true,
           dynamicTyping: true,

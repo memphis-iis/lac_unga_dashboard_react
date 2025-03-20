@@ -6,4 +6,7 @@ services:
     image: iisdevs/lac_unga_dashboard_react:latest
     ports:
       - "3000:80"
+    volumes:
+      - ./data-dashboard/public:/usr/share/nginx/html
+      - /app/node_modules
 

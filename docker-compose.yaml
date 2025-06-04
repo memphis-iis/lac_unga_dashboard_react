@@ -6,6 +6,7 @@ services:
     # Assuming this is also a React app served by Apache/Nginx internally.
     # If it's a different build process or server, adjust accordingly.
     image: iisdevs/lac_unga_dashboard_react:latest
+    build: ./data-dasboard
     restart: always
     # No host port mapping
     volumes:

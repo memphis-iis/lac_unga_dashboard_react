@@ -1,12 +1,26 @@
-version: "3.9"
+# filename: unga-dashboard-stack.yml
+version: '3.9'
 
 services:
   lac_unga_dashboard_react:
-    build: ./data-dashboard
+    # Assuming this is also a React app served by Apache/Nginx internally.
+    # If it's a different build process or server, adjust accordingly.
     image: iisdevs/lac_unga_dashboard_react:latest
-    ports:
-      - "3000:80"
+    restart: always
+    # No host port mapping
     volumes:
-      - ./data-dashboard/public:/usr/share/nginx/html
-      - /app/node_modules
+      # Ensure /lac-dashboard/public exists on your host.
+      # Assuming this is served from the root of the web server within the container.
+      # If using Apache and it expects a subfolder here, adjust this line accordingly.
+      - type: bind
+        source: /lac-dashboard/public
+        target: /usr/local/apache2/htdocs/ # Adjust if Nginx is used, or if Apache uses a different root
+    environment:
+      # This is crucial for React's build process to correctly generate asset paths for subfolder deployment.
+      PUBLIC_URL: /lac-unga-dashboard # For Create React App or similar build tools
+    networks:
+      - jrhaner_default # For Nginx Proxy Manager to access
 
+networks:
+  jrhaner_default:
+    external: true # Connects to your existing Nginx Proxy Manager network

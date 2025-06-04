@@ -6,11 +6,14 @@ import { scaleQuantize } from '@visx/scale';
 import * as d3 from 'd3';
 
 const App = () => {
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const [geoJsonData, setGeoJsonData] = useState(null);
 
   const [xAxisColumn, setXAxisColumn] = useState('');
-  const [yAxisColumn, setYAxisColumn] = useState('');
+    const [yAxisColumn, setYAxisColumn] = useState('');
+  const [AxisColumnFilter, setAxisColumnFilter] = useState([]);
+
 
   const [selectedIsoCodes, setSelectedIsoCodes] = useState([]);
   const [yearRange, setYearRange] = useState([null, null]);
@@ -23,6 +26,7 @@ const App = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       const results = await new Promise((resolve, reject) => {
         Papa.parse('./output.csv', {
           download: true,
@@ -32,6 +36,7 @@ const App = () => {
           error: (error) => reject(error)
         });
       });
+      setLoading(false);
       return results.data;
     };
 
@@ -266,6 +271,11 @@ const App = () => {
       data: chartData,
       options: {
         responsive: true,
+        plugins: {
+          legend: {
+            onClick: null, // Disable legend item click functionality
+          },
+        },
         scales: {
           x: { title: { display: true, text: xAxisColumn || 'Index' } },
           y: { title: { display: true, text: yAxisColumn } },
@@ -504,151 +514,355 @@ const App = () => {
   const uniqueIsoCodes = data.length > 0 
     ? [...new Set(data.map(item => item.ISO3).filter(Boolean))]
     : [];
-  const availableColumns = data.length > 0 ? Object.keys(data[0]) : [];
+  const CohMetrixColumns = [
+    "DESPC", "DESSC", "DESWC", "DESPL", "DESPLd", "DESSL", "DESSLd", "DESWLsy", "DESWLsyd", "DESWLlt", "DESWLltd",
+    "PCNARz", "PCNARp", "PCSYNz", "PCSYNp", "PCCNCz", "PCCNCp", "PCREFz", "PCREFp", "PCDCz", "PCDCp", "PCVERBz",
+    "PCVERBp", "PCCONNz", "PCCONNp", "PCTEMPz", "PCTEMPp", "CRFNO1", "CRFAO1", "CRFSO1", "CRFNOa", "CRFAOa",
+    "CRFSOa", "CRFCWO1", "CRFCWO1d", "CRFCWOa", "CRFCWOad", "LSASS1", "LSASS1d", "LSASSp", "LSASSpd", "LSAPP1",
+    "LSAPP1d", "LSAGN", "LSAGNd", "LDTTRc", "LDTTRa", "LDMTLD", "LDVOCD", "CNCAll", "CNCCaus", "CNCLogic", "CNCADC",
+    "CNCTemp", "CNCTempx", "CNCAdd", "CNCPos", "CNCNeg", "SMCAUSv", "SMCAUSvp", "SMINTEp", "SMCAUSr", "SMINTEr",
+    "SMCAUSlsa", "SMCAUSwn", "SMTEMP", "SYNLE", "SYNNP", "SYNMEDpos", "SYNMEDwrd", "SYNMEDlem", "SYNSTRUTa",
+    "SYNSTRUTt", "DRNP", "DRVP", "DRAP", "DRPP", "DRPVAL", "DRNEG", "DRGERUND", "DRINF", "WRDNOUN", "WRDVERB",
+    "WRDADJ", "WRDADV", "WRDPRO", "WRDPRP1s", "WRDPRP1p", "WRDPRP2", "WRDPRP3s", "WRDPRP3p", "WRDFRQc", "WRDFRQa",
+    "WRDFRQmc", "WRDAOAc", "WRDFAMc", "WRDCNCc", "WRDIMGc", "WRDMEAc", "WRDPOLc", "WRDHYPn", "WRDHYPv", "WRDHYPnv",
+    "RDFRE", "RDFKGL", "RDL2"
+  ];
+  const LDAColumns = [
+    "developmentsustainableagenda",
+    "pacificislandsisland",
+    "refugeesazerbaijanarmenia",
+    "oftheunitednationstheunited",
+    "timeyearscountry",
+    "countriesdevelopingworld",
+    "cyprusiraqturkey",
+    "climatechangeglobal",
+    "worldnationspower",
+    "nationsunitedoperation",
+    "sustainableglobalclimate",
+    "operationsouthunited",
+    "latinamericaamerican",
+    "israelpeacepalestinian",
+    "europeaneuropeunion",
+    "governmentsouthagreement",
+    "countriesworldnations",
+    "securityglobaleconomic",
+    "securityarabregion",
+    "southafricaeconomic",
+    "unitednationscouncil",
+    "ukrainerussiageorgia",
+    "centralpeaceamerica",
+    "peoplesworldpeace",
+    "peopleworldchildren",
+    "countryrepublicafrican",
+    "afghanistanpakistanindia",
+    "africaafricanpeace",
+    "rightshumannations",
+    "presidentmrclimate",
+    "nuclearweaponstreaty",
+    "peopleworldpeoples",
+    "developmenteconomicsocial",
+    "unitednationssri",
+    "peacecountriescommunity",
+    "peoplecountrygovernment",
+    "worldpoliticalnations",
+    "peaceuniteddevelopment",
+    "africasouthpeople",
+    "unitedstatespeople",
+    "worldnationspeace",
+    "organizationreformdrug",
+    "centmillion",
+    "developmentunitednations",
+    "peoplekoreaviet",
+    "statescaribbeansmall",
+    "terrorismunitedsecurity",
+    "statessovietrepublic",
+    "nationsunitedworld",
+    "countriesdevelopmentefforts"
+  ];
+  const LIWCColumns = [
+    "wc", "analytic", "clout", "authentic", "tone", "wps", "bigwords", "dic", "linguistic", "function", "pronoun", 
+    "ppron", "i", "we", "you", "shehe", "they", "ipron", "det", "article", "number", "prep", "auxverb", "adverb", 
+    "conj", "negate", "verb", "adj", "quantity", "drives", "affiliation", "achieve", "power", "cognition", "allnone", 
+    "cogproc", "insight", "cause", "discrep", "tentat", "certitude", "differ", "memory", "affect", "tone_pos", 
+    "tone_neg", "emotion", "emo_pos", "emo_neg", "emo_anx", "emo_anger", "emo_sad", "swear", "social", "socbehav", 
+    "prosocial", "polite", "conflict", "moral", "comm", "socrefs", "family", "friend", "female", "male", "culture", 
+    "politic", "ethnicity", "tech", "lifestyle", "leisure", "home", "work", "money", "relig", "physical", "health", 
+    "illness", "wellness", "mental", "substances", "sexual", "food", "death", "need", "want", "acquire", "lack", 
+    "fulfill", "fatigue", "reward", "risk", "curiosity", "allure", "perception", "attention", "motion", "space", 
+    "visual", "auditory", "feeling", "time", "focuspast", "focuspresent", "focusfuture", "conversation", "netspeak", 
+    "assent", "nonflu", "filler", "allpunc", "period", "comma", "qmark", "exclam", "apostro", "otherp", "emoji"
+  ];
+  const availableColumns = data.length > 0
+    ? Object.keys(data[0]).filter(column => {
+        if (column === 'Year' || column === 'ISO3') {
+          return true; // Always include Year and ISO3
+        }
+        if (AxisColumnFilter.includes('CohMetrix') && CohMetrixColumns.includes(column)) {
+          return true;
+        }
+        if (AxisColumnFilter.includes('LDA') && LDAColumns.includes(column)) {
+          return true;
+        }
+        if (AxisColumnFilter.includes('LIWC') && LIWCColumns.includes(column)) {
+          return true;
+        }
+        return AxisColumnFilter.length === 0; // Show all columns if no filter is selected
+      })
+    : [];
 
   return (
-    <div class="container">
-      <h1>LAC-UNGA Dashboard</h1>
-      <div class="row">
-        <div class="col-md-6">
-          <label htmlFor="xAxisSelect">Select X-Axis Column:</label>
-          <select
-            class="form-select" 
-            id="xAxisSelect"
-            value={xAxisColumn}
-            onChange={(e) => setXAxisColumn(e.target.value)}
-            disabled={chartType === 'map'}
-          >
-            <option value="">-- Select Column --</option>
-            {availableColumns.map(column => (
-              <option key={column} value={column}>{column}</option>
-            ))}
-          </select>
-        </div>
+    <div style={{ display: 'flex', height: '100vh' }}>
+      {/* Sidebar */}
+      <div
+        style={{
+          width: '25%',
+          backgroundColor: '#f8f9fa',
+          padding: '20px',
+          overflowY: 'auto',
+        }}
+      >
 
-        <div class="col-md-6">
-          <label htmlFor="yAxisSelect">Select Y-Axis Column:</label>
-          <select
-            class="form-select" 
-            id="yAxisSelect"
-            value={yAxisColumn}
-            onChange={(e) => setYAxisColumn(e.target.value)}
-          >
-            <option value="">-- Select Column --</option>
-            {availableColumns.map(column => (
-              <option key={column} value={column}>{column}</option>
-            ))}
-          </select>
-        </div>
+        <h2>About the data dashboard</h2>
+        <p>
+          This project was funded by the National Science Foundation (Language Across Cultures: The Communication
+          Styles of World Leaders, #2117009) between 2021-2025.
+        </p>
+        <h2>Project team</h2>
+        <p><strong>Leah C. Windsor, PI</strong></p>
+        <p>Director, Institute for Intelligent Systems (IIS)</p>
+        <p>Associate Professor of Applied Linguistics</p>
+        <p>Institute for Intelligent Systems + Department of English</p>
+        <p><strong>Alistair Windsor, co-PI</strong></p>
+        <p>Associate Professor, Department of Mathematical Sciences</p>
+        <p>Faculty Affiliate, IIS</p>
+        <p><strong>Miriam Van Mersbergen, co-PI</strong></p>
+        <p>Associate Professor, School of Communication Sciences and Disorders</p>
+        <p>Faculty Affiliate, IIS</p>
+        <p><strong>Nicholas Simon, co-PI</strong></p>
+        <p>Associate Professor, Department of Psychology</p>
+        <p>Faculty Affiliate, IIS</p>
+        <p><strong>J. Elliott Casal</strong></p>
+        <p>Assistant Professor of Applied Linguistics, Department of English</p>
+        <p>Faculty Affiliate, IIS</p>
+        <p><strong>Deborah Tollefsen</strong></p>
+        <p>Dean, Graduate School</p>
+        <p>Professor, Department of Psychology</p>
+        <p>Faculty Affiliate, IIS</p>
+        <p><strong>Shaun Gallagher</strong></p>
+        <p>Professor, Department of Psychology</p>
+        <p>Faculty Affiliate, IIS</p>
+        <p><strong>James “Rusty” Haner</strong></p>
+        <p>Senior Software Developer, IIS</p>
+        <p><strong>August White</strong></p>
+        <p>Senior Software Developer, IIS</p>
+        <h2>Dashboard features</h2>
+        <p>
+          This dashboard provides a variety of linguistic features for three different analytic approaches. These
+          include Coh-Metrix (107 features), LIWC (118 features), and LDA (50 features).
+        </p>
+        <h2>How to use the dashboard</h2>
+        <ol>
+          <li>Determine which features you would like to graph from Coh-Metrix, LIWC, and/or LDA.</li>
+          <li>Select the appropriate X-axis variable and Y-axis variable, chart type, and chart aggregation (if applicable).</li>
+          <li>You can download the data as a CSV, or as a chart or map.</li>
+          <li>To reset the parameters and model a new feature or representation, click “Clear ISO filter.”</li>
+        </ol>
       </div>
-      <br></br>
-
-      {uniqueIsoCodes.length > 0 && (
-        <div>
-          <label>Select ISO Codes:</label>
-          <br></br>
-          {uniqueIsoCodes.map(code => (
-            <label key={code} style={{ marginRight: '10px' }}>
-              <input
-                type="checkbox"
-                checked={selectedIsoCodes.includes(code)}
-                onChange={() => handleIsoSelect(code)}
-              />
-              {code}
-            </label>
-          ))}
-          <br></br>
-          <button class="btn btn-warning" onClick={() => setSelectedIsoCodes([])}>Clear ISO Filter</button>
-          
-        </div>
-      )}
 
       
-        <div>
-          <label htmlFor="startYear">Start Year:</label>
-          <input
-            type="range"
-            id="startYear"
-            min={
-              data.length > 0
-                ? Math.min(...data.map(item => item.Year).filter(year => typeof year === 'number'))
-                : 1900
-            }
-            max={
-              data.length > 0
-                ? Math.max(...data.map(item => item.Year).filter(year => typeof year === 'number'))
-                : 2023
-            }
-            step={1}
-            value={yearRange[0] || ''}
+        <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+          <h1>LAC UNGA Dashboard</h1>
+          {loading && <p>Loading data...</p>}
+          {!loading && data.length === 0 && <p>No data available.</p>}
+          {!loading && data.length > 0 && (
+          <div class="container">
+            <div class="row">
+          <div class="col-md-12">
+            <label>Filter Columns:</label>
+            <br />
+            <label style={{ marginRight: '10px' }}>
+              <input
+            type="checkbox"
             onChange={(e) => {
-              const newStart = parseInt(e.target.value);
-              setYearRange([newStart, yearRange[1] !== null ? yearRange[1] : newStart]);
+              if (e.target.checked) {
+                setAxisColumnFilter([...AxisColumnFilter, 'CohMetrix']);
+              } else {
+                setAxisColumnFilter(AxisColumnFilter.filter(col => col !== 'CohMetrix'));
+              }
             }}
-          />
-          <span>{yearRange[0] || 'All'}</span>
-        </div>
-        <div>
-          <label htmlFor="endYear">End Year:</label>
-          <input
-            type="range"
-            id="endYear"
-            min={
-              data.length > 0
-                ? Math.min(...data.map(item => item.Year).filter(year => typeof year === 'number'))
-                : 1900
-            }
-            max={
-              data.length > 0
-                ? Math.max(...data.map(item => item.Year).filter(year => typeof year === 'number'))
-                : 2023
-            }
-            step={1}
-            value={yearRange[1] || ''}
+              />
+              CohMetrix
+            </label>
+            <label style={{ marginRight: '10px' }}>
+              <input
+            type="checkbox"
             onChange={(e) => {
-              const newEnd = parseInt(e.target.value);
-              setYearRange([yearRange[0] !== null ? yearRange[0] : newEnd, newEnd]);
+              if (e.target.checked) {
+                setAxisColumnFilter([...AxisColumnFilter, 'LDA']);
+              } else {
+                setAxisColumnFilter(AxisColumnFilter.filter(col => col !== 'LDA'));
+              }
             }}
-          />
-          <span>{yearRange[1] || 'All'}</span>
+              />
+              LDA
+            </label>
+            <label style={{ marginRight: '10px' }}>
+              <input
+            type="checkbox"
+            onChange={(e) => {
+              if (e.target.checked) {
+                setAxisColumnFilter([...AxisColumnFilter, 'LIWC']);
+              } else {
+                setAxisColumnFilter(AxisColumnFilter.filter(col => col !== 'LIWC'));
+              }
+            }}
+              />
+              LIWC
+            </label>
+          </div>
+          <div class="col-md-6">
+            <label htmlFor="xAxisSelect">Select X-Axis Column:</label>
+            <select
+              class="form-select" 
+              id="xAxisSelect"
+              value={xAxisColumn}
+              onChange={(e) => setXAxisColumn(e.target.value)}
+              disabled={chartType === 'map'}
+            >
+              <option value="">-- Select Column --</option>
+              {availableColumns.map(column => (
+            <option key={column} value={column}>{column}</option>
+              ))}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label htmlFor="yAxisSelect">Select Y-Axis Column:</label>
+            <select
+              class="form-select" 
+              id="yAxisSelect"
+              value={yAxisColumn}
+              onChange={(e) => setYAxisColumn(e.target.value)}
+            >
+              <option value="">-- Select Column --</option>
+              {availableColumns.map(column => (
+            <option key={column} value={column}>{column}</option>
+              ))}
+            </select>
+          </div>
+            </div>
+            <br></br>
+
+            {uniqueIsoCodes.length > 0 && (
+          <div>
+            <label>Select ISO Codes:</label>
+            <br></br>
+            {uniqueIsoCodes.map(code => (
+              <label key={code} style={{ marginRight: '10px' }}>
+            <input
+              type="checkbox"
+              checked={selectedIsoCodes.includes(code)}
+              onChange={() => handleIsoSelect(code)}
+            />
+            {code}
+              </label>
+            ))}
+            <br></br>
+            <button class="btn btn-warning" onClick={() => setSelectedIsoCodes([])}>Clear ISO Filter</button>
+            
+          </div>
+            )}
+
+            
+          <div>
+            <label htmlFor="startYear">Start Year:</label>
+            <input
+              type="range"
+              id="startYear"
+              min={
+            data.length > 0
+              ? Math.min(...data.map(item => item.Year).filter(year => typeof year === 'number'))
+              : 1900
+              }
+              max={
+            data.length > 0
+              ? Math.max(...data.map(item => item.Year).filter(year => typeof year === 'number'))
+              : 2023
+              }
+              step={1}
+              value={yearRange[0] || ''}
+              onChange={(e) => {
+                  const newStart = parseInt(e.target.value);
+                  setYearRange([newStart, yearRange[1] !== null ? yearRange[1] : newStart]);
+                }}
+              />
+              <span>{yearRange[0] || 'All'}</span>
+            </div>
+            <div>
+              <label htmlFor="endYear">End Year:</label>
+              <input
+                type="range"
+                id="endYear"
+                min={
+                  data.length > 0
+                    ? Math.min(...data.map(item => item.Year).filter(year => typeof year === 'number'))
+                    : 1900
+                }
+                max={
+                  data.length > 0
+                    ? Math.max(...data.map(item => item.Year).filter(year => typeof year === 'number'))
+                    : 2023
+                }
+                step={1}
+                value={yearRange[1] || ''}
+                onChange={(e) => {
+                  const newEnd = parseInt(e.target.value);
+                  setYearRange([yearRange[0] !== null ? yearRange[0] : newEnd, newEnd]);
+                }}
+              />
+              <span>{yearRange[1] || 'All'}</span>
+            </div>
+      
+
+          <div>
+            <label htmlFor="chartType">Chart Type:</label>
+            <select class="form-select" id="chartType" value={chartType} onChange={(e) => setChartType(e.target.value)}>
+              <option value="line">Line</option>
+              <option value="bar">Bar</option>
+              <option value="map">Map</option>
+            </select>
+          </div>
+
+          {chartType === 'bar' && (
+            <div>
+              <label htmlFor="barAggregation">Bar Aggregation:</label>
+              <select
+                class="form-select" 
+                id="barAggregation"
+                value={barAggregation}
+                onChange={(e) => setBarAggregation(e.target.value)}
+              >
+                <option value="value">Value (Must have only one year selected)</option>
+                <option value="count">Count</option>
+                <option value="average">Average</option>
+                <option value="median">Median</option>
+                <option value="total">Total</option>
+              </select>
+            </div>
+          )}
+
+          {chartType !== 'map' && <canvas id="myChart"></canvas>}
+          {chartType === 'map' && <Map mapData={mapData} />}
+
+          <div></div>
+            <button class="btn btn-primary my-2" onClick={downloadCSV}>Download CSV</button><br />
+            <button class="btn btn-primary" onClick={downloadImage}>Download Chart/Map</button>
+          </div>
+          )}
+
+          
         </div>
- 
-
-      <div>
-        <label htmlFor="chartType">Chart Type:</label>
-        <select class="form-select" id="chartType" value={chartType} onChange={(e) => setChartType(e.target.value)}>
-          <option value="line">Line</option>
-          <option value="bar">Bar</option>
-          <option value="map">Map</option>
-        </select>
       </div>
-
-      {chartType === 'bar' && (
-        <div>
-          <label htmlFor="barAggregation">Bar Aggregation:</label>
-          <select
-            class="form-select" 
-            id="barAggregation"
-            value={barAggregation}
-            onChange={(e) => setBarAggregation(e.target.value)}
-          >
-            <option value="value">Value (Must have only one year selected)</option>
-            <option value="count">Count</option>
-            <option value="average">Average</option>
-            <option value="median">Median</option>
-            <option value="total">Total</option>
-          </select>
-        </div>
-      )}
-
-      {chartType !== 'map' && <canvas id="myChart"></canvas>}
-      {chartType === 'map' && <Map mapData={mapData} />}
-
-      <div>
-        <button class="btn btn-primary my-2" onClick={downloadCSV}>Download CSV</button><br />
-        <button class="btn btn-primary" onClick={downloadImage}>Download Chart/Map</button>
-      </div>
-    </div>
   );
 };
 

@@ -16,8 +16,6 @@ echo "  - Repository URL: $REPO_URL"
 
 # Get the last 5 commit messages
 COMMIT_MESSAGES=$(git log --pretty=format:"%s" -n 5 HEAD | sed 's/\n//g')
-
-#remove newlines from commit messages
 COMMIT_MESSAGES=$(echo $COMMIT_MESSAGES | tr -d '\n')
 
 # Create a release on GitHub with datestamp (vYYYY-MM-DD-HH-MM-SS)
@@ -43,7 +41,7 @@ echo "$JSON_DATA" > ../client/public/versionInfo.json
 
 # Update the docker-compose.yml tag
 echo "** Updating docker-compose.yml tag... to $CURRENT_BRANCH"
-sed -i "s/image: iisdevs\/unga-data-dashboard:main/image: iisdevs\/lac_unga_dashboard_react:$CURRENT_BRANCH/g" ./docker-compose.yml
+sed -i "" "s/image: iisdevs\/unga-data-dashboard:main/image: iisdevs\/lac_unga_dashboard_react:$CURRENT_BRANCH/g" ./docker-compose.yaml
 echo "  - Updated docker-compose.yml tag to $CURRENT_BRANCH"
 
 
@@ -58,7 +56,7 @@ fi
 # Tag the commit with the release name
 echo "** Tagging the commit with the release name: $RELEASE_NAME"
 git tag -a $RELEASE_NAME -m "Autobuild release for branch: $CURRENT_BRANCH"
-git push origin https://$BUILDER_USERNAME:$GITHUB_TOKEN.com/$REPO_URL $RELEASE_NAME
+git push origin $RELEASE_NAME
 echo "  - Tagged the commit with the release name: $RELEASE_NAME"
 
 
@@ -77,13 +75,14 @@ if [ "$CLEANUP" == "y" ]; then
   echo "  - Local docker cache cleaned up"
 fi
 
-# Build and push the image
-echo "** Building Docker image..."
-sudo docker login
-sudo docker-compose build lac_unga_dashboard_react
-sudo docker-compose push lac_unga_dashboard_react
+# Ensure buildx is initialized
+docker buildx inspect multiarch-builder >/dev/null 2>&1 || docker buildx create --name multiarch-builder --use
+docker buildx use multiarch-builder
 
-echo "** Build and push completed for tag: $TAG"
+echo "** Building Docker image for linux/amd64..."
+docker buildx build --platform linux/amd64 -t iisdevs/lac_unga_dashboard_react:$CURRENT_BRANCH --push -f ./data-dashboard/Dockerfile ./data-dashboard
+
+echo "** Build and push completed for tag: $CURRENT_BRANCH"
 
 
 

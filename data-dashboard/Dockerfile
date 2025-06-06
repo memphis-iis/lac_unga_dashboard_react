@@ -6,5 +6,5 @@ COPY . .
 RUN npm run build
 
 FROM httpd:2.4
-COPY --from=build-stage /app/build  /usr/local/apache2/htdocs/lac_unga_dashboard/
+COPY --from=build-stage /app/build  /usr/local/apache2/htdocs/lac-unga-dashboard/
 EXPOSE 80

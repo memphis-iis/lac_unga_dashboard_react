@@ -7,12 +7,10 @@ services:
     # If it's a different build process or server, adjust accordingly.
     image: iisdevs/lac_unga_dashboard_react:latest
     build: ./data-dashboard
+    platform: linux/amd64
     restart: always
     # No host port mapping
     volumes:
-      - type: bind
-        source: /lac-dashboard/public
-        target: /usr/local/apache2/htdocs/lac-unga-dashboard/
       - type: bind
         source: ./docker/apache/lac-unga-dashboard.conf
         target: /usr/local/apache2/conf/extra/lac-unga-dashboard.conf
